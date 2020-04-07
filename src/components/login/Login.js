@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button, TextField } from '@material-ui/core';
+import axios from 'axios';
+import { AuthContext } from '../../context/AuthContext';
+import { ErrorContext } from '../../context/ErrorContext';
 
 const styles = {
     container: {
@@ -26,6 +29,7 @@ const styles = {
     },
 }
 
+//validation schema
 const LoginSchema = Yup.object().shape({
     email: Yup.string().email()
         .min(6, 'Email too short!')
@@ -38,13 +42,20 @@ const LoginSchema = Yup.object().shape({
 })
 
 
-const onSubmit = async values => {
-    const sleep = ms => new Promise(res => setTimeout(res, ms));
-    await sleep(300);
-}
-
 export const Login = props => {
-    
+
+    const { authState, setAuthState } = useContext(AuthContext);
+    const { error, setError } = useContext(ErrorContext);
+
+    // checks if the login matches db entry
+    const onSubmit = async values => {
+        let response = await axios({ method: 'post', url: '/api/login', data: values });
+        setAuthState(response.data);
+        setTimeout(() => {
+            props.history.push('/home')
+        }, 2000)
+    }
+
     return (
         <div style={styles.container}>
             <Formik
@@ -52,7 +63,6 @@ export const Login = props => {
                 validationSchema={LoginSchema}
                 onSubmit={(values, { setSubmitting }) => {
                     onSubmit(values);
-                    props.history.push('/home');
                 }}
             >
                 {({
@@ -77,7 +87,7 @@ export const Login = props => {
                                     value={values.email}
                                     helperText={errors.email && touched.email && errors.email}
                                     margin="dense"
-                                    error={(errors.email && touched.email && errors.email)? true:false}
+                                    error={(errors.email && touched.email && errors.email) ? true : false}
                                 />
                                 <TextField
                                     variant="outlined"
@@ -89,8 +99,9 @@ export const Login = props => {
                                     value={values.password}
                                     helperText={errors.password && touched.password && errors.password}
                                     margin="dense"
-                                    error={(errors.password && touched.password && errors.password)? true:false}
+                                    error={(errors.password && touched.password && errors.password) ? true : false}
                                 />
+                                <p style={{color: 'red'}}>{error}</p>
                                 <Button type="submit" disabled={isSubmitting} style={styles.button} color="primary" variant="contained">
                                     Submit
                                 </Button>
